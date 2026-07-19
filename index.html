@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#FAF7F0">
+<title>Grocery List</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF7F0;
+    --paper-alt:#F1EBDC;
+    --ink:#2B2B26;
+    --ink-soft:#7A7466;
+    --basil:#3F6C51;
+    --basil-dark:#2E5039;
+    --basil-light:#E7F0E8;
+    --clay:#C4622D;
+    --clay-light:#F5E3D3;
+    --line:#DFD8C8;
+    --white:#FFFFFF;
+    --danger:#B3462C;
+    --shadow: 0 1px 2px rgba(43,43,38,0.06), 0 6px 16px rgba(43,43,38,0.06);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Public Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overscroll-behavior-y:none;
+  }
+  #app{
+    max-width:520px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+
+  /* ---------- Header ---------- */
+  .topbar{
+    padding:22px 20px 14px;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .brand svg{ flex:0 0 auto; }
+  .brand h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:26px;
+    letter-spacing:-0.01em;
+    margin:0;
+    color:var(--ink);
+  }
+  .brand h1 em{
+    font-style:italic;
+    color:var(--basil);
+    font-weight:500;
+  }
+  .tagline{
+    margin:2px 0 0 40px;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+
+  /* ---------- Content ---------- */
+  main{
+    flex:1;
+    padding:4px 16px 130px;
+  }
+  .view{ display:none; animation:fade .25s ease; }
+  .view.active{ display:block; }
+  @keyframes fade{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+
+  .section-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 4px 8px;
+  }
+  .section-row h2{
+    font-family:'Fraunces', serif;
+    font-size:17px;
+    font-weight:600;
+    margin:0;
+  }
+  .link-btn{
+    background:none;
+    border:none;
+    color:var(--basil);
+    font-family:'Public Sans', sans-serif;
+    font-weight:600;
+    font-size:13px;
+    cursor:pointer;
+    padding:6px 4px;
+  }
+  .link-btn:active{ opacity:0.6; }
+
+  /* ---------- Add item card ---------- */
+  .add-card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:12px;
+    box-shadow:var(--shadow);
+    margin-bottom:14px;
+  }
+  .add-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .name-input{
+    flex:1;
+    min-width:0;
+    border:1px solid var(--line);
+    background:var(--paper-alt);
+    border-radius:10px;
+    font-family:'Public Sans', sans-serif;
+    font-size:15px;
+    font-weight:600;
+    color:var(--ink);
+    padding:0 12px;
+    height:40px;
+    outline:none;
+  }
+  .name-input::placeholder{ color:var(--ink-soft); font-weight:500; }
+  .name-input:focus{ border-color:var(--basil); }
+  .qty-input{
+    width:52px;
+    flex:0 0 auto;
+    border:1px solid var(--line);
+    background:var(--paper-alt);
+    border-radius:10px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:15px;
+    font-weight:600;
+    color:var(--ink);
+    text-align:center;
+    height:40px;
+    outline:none;
+    -moz-appearance:textfield;
+  }
+  .qty-input:focus{ border-color:var(--basil); }
+  .qty-input::-webkit-outer-spin-button,
+  .qty-input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .btn-add{
+    background:var(--basil);
+    color:var(--white);
+    border:none;
+    border-radius:10px;
+    height:40px;
+    padding:0 16px;
+    font-family:'Public Sans', sans-serif;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+    white-space:nowrap;
+    flex:0 0 auto;
+  }
+  .btn-add:active{ background:var(--basil-dark); }
+
+  /* ---------- List rows ---------- */
+  .item-list{ display:flex; flex-direction:column; gap:8px; }
+  .item-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:10px 12px;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .item-row.selected{ border-color:var(--basil); background:var(--basil-light); }
+
+  .checkbox{
+    width:24px;
+    height:24px;
+    flex:0 0 auto;
+    border-radius:50%;
+    border:2px solid var(--ink-soft);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    background:var(--white);
+    transition:transform .12s ease, background .15s ease, border-color .15s ease;
+  }
+  .checkbox svg{ width:13px; height:13px; opacity:0; transform:scale(0.5); transition:opacity .12s ease, transform .12s ease; }
+  .checkbox.checked{ background:var(--basil); border-color:var(--basil); animation:pop .22s ease; }
+  .checkbox.checked svg{ opacity:1; transform:scale(1); }
+  @keyframes pop{ 0%{transform:scale(0.85);} 55%{transform:scale(1.15);} 100%{transform:scale(1);} }
+
+  .item-info{ flex:1; min-width:0; }
+  .item-name{
+    font-size:15px;
+    font-weight:600;
+    color:var(--ink);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .item-row.done .item-name{ text-decoration:line-through; color:var(--ink-soft); }
+
+  .qty-chip{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--clay);
+    background:var(--clay-light);
+    border-radius:8px;
+    padding:4px 8px;
+    flex:0 0 auto;
+    white-space:nowrap;
+  }
+
+  .qty-input-row{
+    width:44px;
+    flex:0 0 auto;
+    border:1px solid var(--line);
+    background:var(--paper-alt);
+    border-radius:8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--ink);
+    text-align:center;
+    height:32px;
+    outline:none;
+    -moz-appearance:textfield;
+  }
+  .qty-input-row:focus{ border-color:var(--basil); }
+  .qty-input-row::-webkit-outer-spin-button,
+  .qty-input-row::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+
+  .delete-btn{
+    width:26px; height:26px;
+    flex:0 0 auto;
+    border:none;
+    background:none;
+    color:var(--ink-soft);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:7px;
+  }
+  .delete-btn:active{ background:var(--clay-light); color:var(--danger); }
+
+  /* ---------- Empty states ---------- */
+  .empty-state{
+    text-align:center;
+    padding:50px 20px 30px;
+    color:var(--ink-soft);
+  }
+  .empty-state svg{ margin-bottom:14px; opacity:0.7; }
+  .empty-state h3{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:18px;
+    color:var(--ink);
+    margin:0 0 6px;
+  }
+  .empty-state p{ font-size:13.5px; margin:0; line-height:1.5; }
+
+  /* ---------- Shopping tab ---------- */
+  .receipt-card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:0 0 16px 16px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    margin-bottom:16px;
+  }
+  .torn-edge{
+    height:11px;
+    background-image:
+      linear-gradient(135deg, var(--white) 6px, transparent 0),
+      linear-gradient(-135deg, var(--white) 6px, transparent 0);
+    background-size:12px 12px;
+    background-position:0 0, 6px 0;
+    background-repeat:repeat-x;
+  }
+  .receipt-inner{ padding:6px 14px 14px; }
+  .receipt-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 2px 12px;
+    border-bottom:1px dashed var(--line);
+    margin-bottom:6px;
+  }
+  .receipt-head .progress-text{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    font-weight:600;
+  }
+  .receipt-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:10px 2px;
+    border-bottom:1px solid var(--paper-alt);
+  }
+  .receipt-row:last-child{ border-bottom:none; }
+
+  /* ---------- Save bar ---------- */
+  .save-bar{
+    position:fixed;
+    left:0; right:0; bottom:64px;
+    display:flex;
+    justify-content:center;
+    padding:0 16px;
+    pointer-events:none;
+  }
+  .save-bar-inner{
+    max-width:488px;
+    width:100%;
+    pointer-events:auto;
+  }
+  .btn-save{
+    width:100%;
+    background:var(--basil);
+    color:var(--white);
+    border:none;
+    border-radius:14px;
+    padding:15px;
+    font-family:'Public Sans', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    box-shadow:0 6px 18px rgba(63,108,81,0.35);
+    cursor:pointer;
+  }
+  .btn-save:active{ background:var(--basil-dark); }
+  .btn-save:disabled{ background:var(--ink-soft); box-shadow:none; opacity:0.5; }
+
+  /* ---------- Tab bar ---------- */
+  .tabbar{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    display:flex;
+    justify-content:center;
+    background:var(--white);
+    border-top:1px solid var(--line);
+    padding-bottom:env(safe-area-inset-bottom, 0);
+  }
+  .tabbar-inner{
+    max-width:520px;
+    width:100%;
+    display:flex;
+  }
+  .tab{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:3px;
+    background:none;
+    border:none;
+    padding:10px 0 8px;
+    cursor:pointer;
+    color:var(--ink-soft);
+    font-family:'Public Sans', sans-serif;
+    font-size:11.5px;
+    font-weight:600;
+  }
+  .tab svg{ opacity:0.75; }
+  .tab.active{ color:var(--basil); }
+  .tab.active svg{ opacity:1; }
+  .tab .badge{
+    position:relative;
+  }
+  .tab .count-dot{
+    position:absolute;
+    top:-3px; right:-8px;
+    background:var(--clay);
+    color:var(--white);
+    font-size:9.5px;
+    font-weight:700;
+    border-radius:999px;
+    min-width:15px;
+    height:15px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0 3px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed;
+    left:50%;
+    bottom:150px;
+    transform:translateX(-50%) translateY(10px);
+    background:var(--ink);
+    color:var(--paper);
+    padding:11px 18px;
+    border-radius:12px;
+    font-size:13.5px;
+    font-weight:600;
+    box-shadow:0 8px 20px rgba(0,0,0,0.2);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+    z-index:50;
+    max-width:80%;
+    text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+        <path d="M4 9h16l-1.6 9.4A2 2 0 0 1 16.44 20H7.56a2 2 0 0 1-1.96-1.6L4 9Z" stroke="#3F6C51" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M8 9V7a4 4 0 0 1 8 0v2" stroke="#3F6C51" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M9 13v3M12 13v3M15 13v3" stroke="#C4622D" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <h1>Grocery <em>List</em></h1>
+    </div>
+    <p class="tagline" id="tagline">Loading your list…</p>
+  </header>
+
+  <main>
+    <!-- PANTRY VIEW -->
+    <section id="pantry-view" class="view active">
+      <div class="add-card">
+        <div class="add-row">
+          <input type="text" class="name-input" id="new-item-name" placeholder="Add an item, e.g. Tomatoes" maxlength="60">
+          <input type="number" class="qty-input" id="new-item-qty" value="1" min="1" inputmode="numeric" aria-label="Quantity">
+          <button class="btn-add" id="add-item-btn">Add</button>
+        </div>
+      </div>
+
+      <div class="section-row">
+        <h2>All Items</h2>
+        <button class="link-btn" id="select-toggle-btn">Select all</button>
+      </div>
+
+      <div class="item-list" id="pantry-list"></div>
+      <div class="empty-state" id="pantry-empty" style="display:none;">
+        <svg width="46" height="46" viewBox="0 0 24 24" fill="none"><path d="M4 9h16l-1.6 9.4A2 2 0 0 1 16.44 20H7.56a2 2 0 0 1-1.96-1.6L4 9Z" stroke="#C7BFAC" stroke-width="1.5"/><path d="M8 9V7a4 4 0 0 1 8 0v2" stroke="#C7BFAC" stroke-width="1.5"/></svg>
+        <h3>Your pantry list is empty</h3>
+        <p>Add the groceries you usually buy above.<br>New items are selected by default.</p>
+      </div>
+    </section>
+
+    <!-- SHOPPING VIEW -->
+    <section id="shopping-view" class="view">
+      <div class="section-row">
+        <h2>Shopping list</h2>
+        <button class="link-btn" id="clear-list-btn">Clear list</button>
+      </div>
+
+      <div id="shopping-wrap">
+        <div class="receipt-card">
+          <div class="torn-edge"></div>
+          <div class="receipt-inner">
+            <div class="receipt-head">
+              <span>Ready to shop</span>
+              <span class="progress-text" id="progress-text">0 / 0</span>
+            </div>
+            <div class="item-list" id="shopping-list-el"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state" id="shopping-empty" style="display:none;">
+        <svg width="46" height="46" viewBox="0 0 24 24" fill="none"><path d="M6 4h12v16l-6-3-6 3V4Z" stroke="#C7BFAC" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <h3>No shopping list yet</h3>
+        <p>Go to Pantry, select the items you need,<br>then tap Save to build your list.</p>
+      </div>
+    </section>
+  </main>
+
+  <div class="save-bar" id="save-bar">
+    <div class="save-bar-inner">
+      <button class="btn-save" id="save-btn">Save &amp; build shopping list</button>
+    </div>
+  </div>
+
+  <nav class="tabbar">
+    <div class="tabbar-inner">
+      <button class="tab active" data-tab="pantry">
+        <span class="badge">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M4 9h16l-1.6 9.4A2 2 0 0 1 16.44 20H7.56a2 2 0 0 1-1.96-1.6L4 9Z" stroke="currentColor" stroke-width="1.6"/><path d="M8 9V7a4 4 0 0 1 8 0v2" stroke="currentColor" stroke-width="1.6"/></svg>
+        </span>
+        Pantry
+      </button>
+      <button class="tab" data-tab="shopping">
+        <span class="badge" id="shopping-badge-wrap">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M6 4h12v16l-6-3-6 3V4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          <span class="count-dot" id="shopping-count" style="display:none;">0</span>
+        </span>
+        Shopping List
+      </button>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var pantryItems = [];
+  var shoppingList = [];
+
+  var el = {
+    tagline: document.getElementById('tagline'),
+    pantryList: document.getElementById('pantry-list'),
+    pantryEmpty: document.getElementById('pantry-empty'),
+    shoppingListEl: document.getElementById('shopping-list-el'),
+    shoppingEmpty: document.getElementById('shopping-empty'),
+    shoppingWrap: document.getElementById('shopping-wrap'),
+    progressText: document.getElementById('progress-text'),
+    newName: document.getElementById('new-item-name'),
+    newQty: document.getElementById('new-item-qty'),
+    saveBar: document.getElementById('save-bar'),
+    saveBtn: document.getElementById('save-btn'),
+    selectToggleBtn: document.getElementById('select-toggle-btn'),
+    clearListBtn: document.getElementById('clear-list-btn'),
+    shoppingCount: document.getElementById('shopping-count'),
+    toast: document.getElementById('toast')
+  };
+
+  var CHECK_SVG = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  // ---------- storage helpers (uses the browser's own localStorage,
+  // so the list is saved on-device even when this file runs standalone) ----------
+  function getJSON(key){
+    try {
+      var raw = localStorage.getItem(key);
+      return Promise.resolve(raw ? JSON.parse(raw) : null);
+    } catch(e){
+      console.error('Storage read failed', key, e);
+      return Promise.resolve(null);
+    }
+  }
+  function setJSON(key, value){
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch(e){
+      console.error('Storage save failed', key, e);
+      showToast('Could not save on this device');
+    }
+    return Promise.resolve();
+  }
+
+  function uid(){
+    return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  }
+
+  function showToast(msg){
+    el.toast.textContent = msg;
+    el.toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function(){ el.toast.classList.remove('show'); }, 2200);
+  }
+
+  function esc(s){
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  // ---------- render: pantry ----------
+  function renderPantry(){
+    if(pantryItems.length === 0){
+      el.pantryList.innerHTML = '';
+      el.pantryEmpty.style.display = 'block';
+      el.selectToggleBtn.style.display = 'none';
+    } else {
+      el.pantryEmpty.style.display = 'none';
+      el.selectToggleBtn.style.display = 'inline-block';
+      var allSelected = pantryItems.every(function(i){ return i.selected; });
+      el.selectToggleBtn.textContent = allSelected ? 'Clear all' : 'Select all';
+
+      el.pantryList.innerHTML = pantryItems.map(function(item){
+        return (
+          '<div class="item-row ' + (item.selected ? 'selected' : '') + '" data-id="' + item.id + '">' +
+            '<div class="checkbox ' + (item.selected ? 'checked' : '') + '" data-action="toggle-select">' + CHECK_SVG + '</div>' +
+            '<div class="item-info">' +
+              '<div class="item-name">' + esc(item.name) + '</div>' +
+            '</div>' +
+            '<input type="number" class="qty-input-row" data-action="qty-edit" value="' + item.qty + '" min="1" inputmode="numeric" aria-label="Quantity">' +
+            '<button class="delete-btn" data-action="delete" aria-label="Delete item">' +
+              '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>' +
+            '</button>' +
+          '</div>'
+        );
+      }).join('');
+    }
+
+    var selectedCount = pantryItems.filter(function(i){ return i.selected; }).length;
+    el.saveBtn.disabled = selectedCount === 0;
+    el.saveBtn.textContent = selectedCount > 0
+      ? 'Save & build shopping list (' + selectedCount + ')'
+      : 'Select items to save';
+  }
+
+  // ---------- render: shopping ----------
+  function renderShopping(){
+    var count = shoppingList.length;
+    el.shoppingCount.style.display = count > 0 ? 'flex' : 'none';
+    el.shoppingCount.textContent = count;
+
+    if(count === 0){
+      el.shoppingWrap.style.display = 'none';
+      el.shoppingEmpty.style.display = 'block';
+      el.clearListBtn.style.display = 'none';
+      return;
+    }
+    el.shoppingWrap.style.display = 'block';
+    el.shoppingEmpty.style.display = 'none';
+    el.clearListBtn.style.display = 'inline-block';
+
+    var done = shoppingList.filter(function(i){ return i.checked; }).length;
+    el.progressText.textContent = done + ' / ' + count;
+
+    el.shoppingListEl.innerHTML = shoppingList.map(function(item){
+      return (
+        '<div class="receipt-row item-row ' + (item.checked ? 'done' : '') + '" data-id="' + item.id + '">' +
+          '<div class="checkbox ' + (item.checked ? 'checked' : '') + '" data-action="toggle-check">' + CHECK_SVG + '</div>' +
+          '<div class="item-info"><div class="item-name">' + esc(item.name) + '</div></div>' +
+          '<div class="qty-chip">Qty ' + item.qty + '</div>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  // ---------- pantry actions ----------
+  el.pantryList.addEventListener('click', function(e){
+    var actionEl = e.target.closest('[data-action]');
+    if(!actionEl) return;
+    var action = actionEl.getAttribute('data-action');
+    if(action === 'qty-edit') return; // quantity box handles its own input/change events
+
+    var row = e.target.closest('.item-row');
+    var id = row.getAttribute('data-id');
+    var item = pantryItems.find(function(i){ return i.id === id; });
+    if(!item) return;
+
+    if(action === 'toggle-select'){
+      item.selected = !item.selected;
+    } else if(action === 'delete'){
+      pantryItems = pantryItems.filter(function(i){ return i.id !== id; });
+    }
+    renderPantry();
+    setJSON('pantry-items', pantryItems);
+  });
+
+  // quantity edited directly in a pantry row (don't re-render while typing, or focus is lost)
+  el.pantryList.addEventListener('input', function(e){
+    var input = e.target.closest('[data-action="qty-edit"]');
+    if(!input) return;
+    var row = e.target.closest('.item-row');
+    var id = row.getAttribute('data-id');
+    var item = pantryItems.find(function(i){ return i.id === id; });
+    if(!item) return;
+    var val = parseInt(input.value, 10);
+    item.qty = (!isNaN(val) && val >= 1) ? val : item.qty;
+    setJSON('pantry-items', pantryItems);
+  });
+  el.pantryList.addEventListener('change', function(e){
+    var input = e.target.closest('[data-action="qty-edit"]');
+    if(!input) return;
+    var row = e.target.closest('.item-row');
+    var id = row.getAttribute('data-id');
+    var item = pantryItems.find(function(i){ return i.id === id; });
+    if(!item) return;
+    input.value = item.qty; // normalize display (e.g. if left empty)
+  });
+
+  el.selectToggleBtn.addEventListener('click', function(){
+    var allSelected = pantryItems.every(function(i){ return i.selected; });
+    pantryItems.forEach(function(i){ i.selected = !allSelected; });
+    renderPantry();
+    setJSON('pantry-items', pantryItems);
+  });
+
+  function addItem(){
+    var name = el.newName.value.trim();
+    if(!name){
+      el.newName.focus();
+      return;
+    }
+    var qtyVal = parseInt(el.newQty.value, 10);
+    if(isNaN(qtyVal) || qtyVal < 1) qtyVal = 1;
+
+    pantryItems.unshift({
+      id: uid(),
+      name: name,
+      qty: qtyVal,
+      selected: true
+    });
+    el.newName.value = '';
+    el.newQty.value = '1';
+    renderPantry();
+    setJSON('pantry-items', pantryItems);
+    showToast('Added "' + name + '"');
+    el.newName.focus();
+  }
+  document.getElementById('add-item-btn').addEventListener('click', addItem);
+  el.newName.addEventListener('keydown', function(e){
+    if(e.key === 'Enter') addItem();
+  });
+  el.newQty.addEventListener('keydown', function(e){
+    if(e.key === 'Enter') addItem();
+  });
+
+  // ---------- save -> build shopping list ----------
+  el.saveBtn.addEventListener('click', function(){
+    var selected = pantryItems.filter(function(i){ return i.selected; });
+    if(selected.length === 0){
+      showToast('Select at least one item first');
+      return;
+    }
+    shoppingList = selected.map(function(i){
+      return { id: i.id, name: i.name, qty: i.qty, checked: false };
+    });
+    setJSON('shopping-list', shoppingList);
+    renderShopping();
+    switchTab('shopping');
+    showToast('Saved ' + selected.length + ' item' + (selected.length > 1 ? 's' : '') + ' to your shopping list');
+  });
+
+  // ---------- shopping actions ----------
+  el.shoppingListEl.addEventListener('click', function(e){
+    var actionEl = e.target.closest('[data-action="toggle-check"]');
+    if(!actionEl) return;
+    var row = e.target.closest('.item-row');
+    var id = row.getAttribute('data-id');
+    var item = shoppingList.find(function(i){ return i.id === id; });
+    if(!item) return;
+    item.checked = !item.checked;
+    renderShopping();
+    setJSON('shopping-list', shoppingList);
+  });
+
+  el.clearListBtn.addEventListener('click', function(){
+    if(shoppingList.length === 0) return;
+    shoppingList = [];
+    renderShopping();
+    setJSON('shopping-list', shoppingList);
+    showToast('Shopping list cleared');
+  });
+
+  // ---------- tabs ----------
+  function switchTab(name){
+    document.querySelectorAll('.tab').forEach(function(t){
+      t.classList.toggle('active', t.getAttribute('data-tab') === name);
+    });
+    document.getElementById('pantry-view').classList.toggle('active', name === 'pantry');
+    document.getElementById('shopping-view').classList.toggle('active', name === 'shopping');
+    el.saveBar.style.display = name === 'pantry' ? 'flex' : 'none';
+  }
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.addEventListener('click', function(){ switchTab(t.getAttribute('data-tab')); });
+  });
+
+  // ---------- service worker (enables install / offline use) ----------
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js').catch(function(err){
+        console.error('SW registration failed', err);
+      });
+    });
+  }
+
+  // ---------- init ----------
+  Promise.all([getJSON('pantry-items'), getJSON('shopping-list')]).then(function(res){
+    pantryItems = res[0] || [];
+    shoppingList = res[1] || [];
+    el.tagline.textContent = pantryItems.length
+      ? 'Pick what you need, then save your list.'
+      : 'Build your pantry list to get started.';
+    renderPantry();
+    renderShopping();
+    switchTab('pantry');
+  }).catch(function(){
+    el.tagline.textContent = 'Build your pantry list to get started.';
+    renderPantry();
+    renderShopping();
+    switchTab('pantry');
+  });
+
+})();
+</script>
+</body>
+</html>
