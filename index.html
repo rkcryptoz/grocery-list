@@ -148,7 +148,9 @@
     border:1px solid var(--line);
     border-radius:16px;
     box-shadow:var(--shadow);
-    overflow:hidden;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    max-height:calc(100vh - 300px);
   }
   .item-list{ display:flex; flex-direction:column; }
   .item-row{
@@ -659,7 +661,7 @@
                   '<span class="locked-badge"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Added</span>' +
                 '</div>' +
               '</div>' +
-              '<input type="text" class="qty-input-row" value="' + escAttr(item.qty) + '" placeholder="Quantity" maxlength="16" aria-label="Quantity" disabled>' +
+              '<input type="text" class="qty-input-row" value="' + escAttr(item.qty && item.qty.trim() ? item.qty : 'NA') + '" placeholder="Quantity" maxlength="16" aria-label="Quantity" disabled>' +
             '</div>'
           );
         }
@@ -706,11 +708,11 @@
     el.progressText.textContent = done + ' / ' + count;
 
     el.shoppingListEl.innerHTML = shoppingList.map(function(item){
-      var hasQty = item.qty && String(item.qty).trim();
+      var qtyDisplay = item.qty && String(item.qty).trim() ? item.qty : 'NA';
       return (
         '<div class="receipt-row item-row ' + (item.checked ? 'done' : '') + '" data-id="' + item.id + '" data-action="toggle-check">' +
           '<div class="item-info"><div class="item-name">' + esc(item.name) + '</div></div>' +
-          (hasQty ? '<div class="qty-chip">Qty ' + esc(item.qty) + '</div>' : '') +
+          '<div class="qty-chip">Qty ' + esc(qtyDisplay) + '</div>' +
           '<span class="done-mark">' + CHECK_SVG + '</span>' +
           '<button class="delete-btn" data-action="delete-shopping" aria-label="Remove item">' +
             '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V4.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1V7M6 7l.8 12.4a2 2 0 0 0 2 1.6h6.4a2 2 0 0 0 2-1.6L18 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>' +
@@ -812,7 +814,10 @@
   function removeFromShoppingList(id){
     shoppingList = shoppingList.filter(function(i){ return i.id !== id; });
     var pantryItem = pantryItems.find(function(i){ return i.id === id; });
-    if(pantryItem) pantryItem.selected = false;
+    if(pantryItem){
+      pantryItem.selected = false;
+      pantryItem.qty = '';
+    }
     renderShopping();
     renderPantry();
     setJSON('shopping-list', shoppingList);
@@ -844,7 +849,10 @@
     if(shoppingList.length === 0) return;
     shoppingList.forEach(function(sItem){
       var pantryItem = pantryItems.find(function(i){ return i.id === sItem.id; });
-      if(pantryItem) pantryItem.selected = false;
+      if(pantryItem){
+        pantryItem.selected = false;
+        pantryItem.qty = '';
+      }
     });
     shoppingList = [];
     renderShopping();
