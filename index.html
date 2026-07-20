@@ -56,8 +56,6 @@
   .view.active{ display:block; }
   @keyframes fade{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
 
-  @keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
-
   .section-row{
     display:flex;
     align-items:center;
@@ -383,29 +381,6 @@
   .btn-save:active{ background:var(--basil-dark); }
   .btn-save:disabled{ background:var(--ink-soft); box-shadow:none; opacity:0.5; }
 
-  .btn-refresh{
-    flex:0 0 auto;
-    height:48px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:6px;
-    background:var(--white);
-    color:var(--ink);
-    border:1px solid var(--line);
-    border-radius:13px;
-    padding:0 15px;
-    font-family:'Public Sans', sans-serif;
-    font-weight:700;
-    font-size:14px;
-    box-shadow:var(--shadow);
-    cursor:pointer;
-    white-space:nowrap;
-  }
-  .btn-refresh svg{ width:16px; height:16px; flex:0 0 auto; }
-  .btn-refresh:active{ background:var(--paper-alt); }
-  .btn-refresh.spinning svg{ animation:spin .6s linear; }
-
   /* ---------- Tab bar ---------- */
   .tabbar{
     position:fixed;
@@ -545,11 +520,7 @@
 
   <div class="save-bar" id="save-bar">
     <div class="save-bar-inner">
-      <button class="btn-save" id="save-btn">Save List</button>
-      <button class="btn-refresh" id="refresh-btn" aria-label="Refresh">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M20 11A8 8 0 1 0 19.5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M20 5v6h-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Refresh
-      </button>
+      <button class="btn-save" id="save-btn">Save to Shopping List</button>
     </div>
   </div>
 
@@ -596,8 +567,7 @@
     selectToggleBtn: document.getElementById('select-toggle-btn'),
     clearListBtn: document.getElementById('clear-list-btn'),
     shoppingCount: document.getElementById('shopping-count'),
-    toast: document.getElementById('toast'),
-    refreshBtn: document.getElementById('refresh-btn')
+    toast: document.getElementById('toast')
   };
 
   var CHECK_SVG = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -669,7 +639,14 @@
       el.selectToggleBtn.textContent = allSelected ? 'Clear all' : 'Select all';
       el.selectToggleBtn.style.display = unlockedItems.length > 0 ? 'inline-block' : 'none';
 
-      el.pantryList.innerHTML = pantryItems.map(function(item){
+      var sortedItems = pantryItems.slice().sort(function(a, b){
+        var aLocked = !!lockedIds[a.id];
+        var bLocked = !!lockedIds[b.id];
+        if(aLocked !== bLocked) return aLocked ? -1 : 1;
+        return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+      });
+
+      el.pantryList.innerHTML = sortedItems.map(function(item){
         var locked = !!lockedIds[item.id];
 
         if(locked){
@@ -695,7 +672,7 @@
             '</div>' +
             '<input type="text" class="qty-input-row" data-action="qty-edit" value="' + escAttr(item.qty) + '" placeholder="Quantity" maxlength="16" aria-label="Quantity">' +
             '<button class="delete-btn" data-action="delete" aria-label="Delete item">' +
-              '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>' +
+              '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V4.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1V7M6 7l.8 12.4a2 2 0 0 0 2 1.6h6.4a2 2 0 0 0 2-1.6L18 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>' +
             '</button>' +
           '</div>'
         );
@@ -705,7 +682,7 @@
     var selectedCount = pantryItems.filter(function(i){ return i.selected; }).length;
     el.saveBtn.disabled = selectedCount === 0;
     el.saveBtn.textContent = selectedCount > 0
-      ? 'Save List (' + selectedCount + ')'
+      ? 'Save to Shopping List (' + selectedCount + ')'
       : 'Select items to save';
   }
 
@@ -736,7 +713,7 @@
           (hasQty ? '<div class="qty-chip">Qty ' + esc(item.qty) + '</div>' : '') +
           '<span class="done-mark">' + CHECK_SVG + '</span>' +
           '<button class="delete-btn" data-action="delete-shopping" aria-label="Remove item">' +
-            '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>' +
+            '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V4.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1V7M6 7l.8 12.4a2 2 0 0 0 2 1.6h6.4a2 2 0 0 0 2-1.6L18 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>' +
           '</button>' +
         '</div>'
       );
@@ -888,12 +865,6 @@
   }
   document.querySelectorAll('.tab').forEach(function(t){
     t.addEventListener('click', function(){ switchTab(t.getAttribute('data-tab')); });
-  });
-
-  // ---------- refresh (forces a fresh fetch, bypassing any cached page) ----------
-  el.refreshBtn.addEventListener('click', function(){
-    el.refreshBtn.classList.add('spinning');
-    window.location.reload();
   });
 
   // ---------- remove any old service worker + caches (was causing stale content) ----------
