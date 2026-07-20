@@ -197,6 +197,14 @@
   .item-row.locked .item-name{ color:var(--ink-soft); }
   .item-row.done .item-name{ text-decoration:line-through; color:var(--ink-soft); }
 
+  .item-name-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    min-width:0;
+  }
+  .item-name-row .item-name{ flex:0 1 auto; min-width:0; }
+
   .qty-chip{
     font-family:'IBM Plex Mono', monospace;
     font-size:12.5px;
@@ -231,18 +239,18 @@
   .locked-badge{
     display:flex;
     align-items:center;
-    gap:4px;
-    font-size:11.5px;
+    gap:3px;
+    font-size:10.5px;
     font-weight:700;
     color:var(--basil-dark);
     background:var(--basil-light);
     border:1px solid var(--basil);
     border-radius:999px;
-    padding:4px 10px 4px 7px;
+    padding:3px 8px 3px 6px;
     flex:0 0 auto;
     white-space:nowrap;
   }
-  .locked-badge svg{ width:11px; height:11px; flex:0 0 auto; }
+  .locked-badge svg{ width:10px; height:10px; flex:0 0 auto; }
 
   .delete-btn{
     width:26px; height:26px;
@@ -354,30 +362,39 @@
   .btn-save{
     flex:1;
     min-width:0;
+    height:48px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
     background:var(--basil);
     color:var(--white);
     border:none;
-    border-radius:14px;
-    padding:15px;
+    border-radius:13px;
+    padding:0 14px;
     font-family:'Public Sans', sans-serif;
     font-weight:700;
-    font-size:15px;
+    font-size:14.5px;
     box-shadow:0 6px 18px rgba(63,108,81,0.35);
     cursor:pointer;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
   }
   .btn-save:active{ background:var(--basil-dark); }
   .btn-save:disabled{ background:var(--ink-soft); box-shadow:none; opacity:0.5; }
 
   .btn-refresh{
     flex:0 0 auto;
+    height:48px;
     display:flex;
     align-items:center;
-    gap:7px;
+    justify-content:center;
+    gap:6px;
     background:var(--white);
     color:var(--ink);
     border:1px solid var(--line);
-    border-radius:14px;
-    padding:15px 16px;
+    border-radius:13px;
+    padding:0 15px;
     font-family:'Public Sans', sans-serif;
     font-weight:700;
     font-size:14px;
@@ -477,7 +494,7 @@
     <section id="pantry-view" class="view active">
       <div class="add-card">
         <div class="add-row">
-          <input type="text" class="name-input" id="new-item-name" placeholder="Add an item, e.g. Tomatoes" maxlength="60">
+          <input type="text" class="name-input" id="new-item-name" placeholder="Add new Item to the List" maxlength="60">
           <input type="text" class="qty-input" id="new-item-qty" maxlength="16" placeholder="Quantity" aria-label="Quantity">
           <button class="btn-add" id="add-item-btn">Add</button>
         </div>
@@ -521,14 +538,14 @@
       <div class="empty-state" id="shopping-empty" style="display:none;">
         <svg width="46" height="46" viewBox="0 0 24 24" fill="none"><path d="M6 4h12v16l-6-3-6 3V4Z" stroke="#C7BFAC" stroke-width="1.5" stroke-linejoin="round"/></svg>
         <h3>No shopping list yet</h3>
-        <p>Go to Grocery, select the items you need,<br>then tap Save to build your list.</p>
+        <p>Go to All Groceries, select the items you need,<br>then tap Save to build your list.</p>
       </div>
     </section>
   </main>
 
   <div class="save-bar" id="save-bar">
     <div class="save-bar-inner">
-      <button class="btn-save" id="save-btn">Save &amp; build shopping list</button>
+      <button class="btn-save" id="save-btn">Save List</button>
       <button class="btn-refresh" id="refresh-btn" aria-label="Refresh">
         <svg viewBox="0 0 24 24" fill="none"><path d="M20 11A8 8 0 1 0 19.5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M20 5v6h-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Refresh
@@ -542,7 +559,7 @@
         <span class="badge">
           <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M4 9h16l-1.6 9.4A2 2 0 0 1 16.44 20H7.56a2 2 0 0 1-1.96-1.6L4 9Z" stroke="currentColor" stroke-width="1.6"/><path d="M8 9V7a4 4 0 0 1 8 0v2" stroke="currentColor" stroke-width="1.6"/></svg>
         </span>
-        Grocery
+        All Groceries
       </button>
       <button class="tab" data-tab="shopping">
         <span class="badge" id="shopping-badge-wrap">
@@ -660,10 +677,12 @@
             '<div class="item-row locked" data-id="' + item.id + '">' +
               '<div class="checkbox checked locked-check">' + CHECK_SVG + '</div>' +
               '<div class="item-info">' +
-                '<div class="item-name">' + esc(item.name) + '</div>' +
+                '<div class="item-name-row">' +
+                  '<span class="item-name">' + esc(item.name) + '</span>' +
+                  '<span class="locked-badge"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Added</span>' +
+                '</div>' +
               '</div>' +
               '<input type="text" class="qty-input-row" value="' + escAttr(item.qty) + '" placeholder="Quantity" maxlength="16" aria-label="Quantity" disabled>' +
-              '<span class="locked-badge"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Added</span>' +
             '</div>'
           );
         }
@@ -686,7 +705,7 @@
     var selectedCount = pantryItems.filter(function(i){ return i.selected; }).length;
     el.saveBtn.disabled = selectedCount === 0;
     el.saveBtn.textContent = selectedCount > 0
-      ? 'Save & build shopping list (' + selectedCount + ')'
+      ? 'Save List (' + selectedCount + ')'
       : 'Select items to save';
   }
 
@@ -809,8 +828,7 @@
     setJSON('shopping-list', shoppingList);
     renderShopping();
     renderPantry();
-    switchTab('shopping');
-    showToast('Saved ' + selected.length + ' item' + (selected.length > 1 ? 's' : '') + ' to your shopping list');
+    showToast('List Saved');
   });
 
   // ---------- shopping actions ----------
