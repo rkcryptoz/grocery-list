@@ -50,42 +50,10 @@
     position:relative;
   }
 
-  /* ---------- Header ---------- */
-  .topbar{
-    padding:22px 20px 14px;
-    display:flex;
-    flex-direction:column;
-    gap:2px;
-  }
-  .brand{
-    display:flex;
-    align-items:center;
-    gap:8px;
-  }
-  .brand svg{ flex:0 0 auto; }
-  .brand h1{
-    font-family:'Fraunces', serif;
-    font-weight:600;
-    font-size:26px;
-    letter-spacing:-0.01em;
-    margin:0;
-    color:var(--ink);
-  }
-  .brand h1 em{
-    font-style:italic;
-    color:var(--basil);
-    font-weight:500;
-  }
-  .tagline{
-    margin:2px 0 0 40px;
-    font-size:13px;
-    color:var(--ink-soft);
-  }
-
   /* ---------- Content ---------- */
   main{
     flex:1;
-    padding:4px 16px 130px;
+    padding:22px 16px 130px;
   }
   .view{ display:none; animation:fade .25s ease; }
   .view.active{ display:block; }
@@ -146,23 +114,21 @@
   .name-input::placeholder{ color:var(--ink-soft); font-weight:500; }
   .name-input:focus{ border-color:var(--basil); }
   .qty-input{
-    width:52px;
+    width:100px;
     flex:0 0 auto;
     border:1px solid var(--line);
     background:var(--paper-alt);
     border-radius:10px;
-    font-family:'IBM Plex Mono', monospace;
-    font-size:15px;
+    font-family:'Public Sans', sans-serif;
+    font-size:14px;
     font-weight:600;
     color:var(--ink);
     text-align:center;
     height:40px;
+    padding:0 6px;
     outline:none;
-    -moz-appearance:textfield;
   }
   .qty-input:focus{ border-color:var(--basil); }
-  .qty-input::-webkit-outer-spin-button,
-  .qty-input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
   .btn-add{
     background:var(--basil);
     color:var(--white);
@@ -235,23 +201,21 @@
   }
 
   .qty-input-row{
-    width:44px;
+    width:92px;
     flex:0 0 auto;
     border:1px solid var(--line);
     background:var(--paper-alt);
     border-radius:8px;
-    font-family:'IBM Plex Mono', monospace;
-    font-size:13.5px;
+    font-family:'Public Sans', sans-serif;
+    font-size:13px;
     font-weight:600;
     color:var(--ink);
     text-align:center;
     height:32px;
+    padding:0 4px;
     outline:none;
-    -moz-appearance:textfield;
   }
   .qty-input-row:focus{ border-color:var(--basil); }
-  .qty-input-row::-webkit-outer-spin-button,
-  .qty-input-row::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
 
   .delete-btn{
     width:26px; height:26px;
@@ -320,10 +284,29 @@
     display:flex;
     align-items:center;
     gap:12px;
-    padding:10px 2px;
+    padding:12px 4px;
     border-bottom:1px solid var(--paper-alt);
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
   }
+  .receipt-row:active{ background:var(--paper-alt); }
   .receipt-row:last-child{ border-bottom:none; }
+  .done-mark{
+    width:22px;
+    height:22px;
+    flex:0 0 auto;
+    border-radius:50%;
+    background:var(--basil);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    opacity:0;
+    transform:scale(0.5);
+    transition:opacity .15s ease, transform .15s ease;
+  }
+  .done-mark svg{ width:12px; height:12px; }
+  .item-row.done .done-mark{ opacity:1; transform:scale(1); animation:pop .22s ease; }
 
   /* ---------- Save bar ---------- */
   .save-bar{
@@ -438,25 +421,13 @@
 <body>
 <div id="app">
 
-  <header class="topbar">
-    <div class="brand">
-      <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-        <path d="M4 9h16l-1.6 9.4A2 2 0 0 1 16.44 20H7.56a2 2 0 0 1-1.96-1.6L4 9Z" stroke="#3F6C51" stroke-width="1.6" stroke-linejoin="round"/>
-        <path d="M8 9V7a4 4 0 0 1 8 0v2" stroke="#3F6C51" stroke-width="1.6" stroke-linecap="round"/>
-        <path d="M9 13v3M12 13v3M15 13v3" stroke="#C4622D" stroke-width="1.6" stroke-linecap="round"/>
-      </svg>
-      <h1>Grocery <em>List</em></h1>
-    </div>
-    <p class="tagline" id="tagline">Loading your list…</p>
-  </header>
-
   <main>
-    <!-- PANTRY VIEW -->
+    <!-- GROCERY VIEW -->
     <section id="pantry-view" class="view active">
       <div class="add-card">
         <div class="add-row">
           <input type="text" class="name-input" id="new-item-name" placeholder="Add an item, e.g. Tomatoes" maxlength="60">
-          <input type="number" class="qty-input" id="new-item-qty" value="1" min="1" inputmode="numeric" aria-label="Quantity">
+          <input type="text" class="qty-input" id="new-item-qty" value="1" maxlength="16" placeholder="Qty" aria-label="Quantity">
           <button class="btn-add" id="add-item-btn">Add</button>
         </div>
       </div>
@@ -469,7 +440,7 @@
       <div class="item-list" id="pantry-list"></div>
       <div class="empty-state" id="pantry-empty" style="display:none;">
         <svg width="46" height="46" viewBox="0 0 24 24" fill="none"><path d="M4 9h16l-1.6 9.4A2 2 0 0 1 16.44 20H7.56a2 2 0 0 1-1.96-1.6L4 9Z" stroke="#C7BFAC" stroke-width="1.5"/><path d="M8 9V7a4 4 0 0 1 8 0v2" stroke="#C7BFAC" stroke-width="1.5"/></svg>
-        <h3>Your pantry list is empty</h3>
+        <h3>Your grocery list is empty</h3>
         <p>Add the groceries you usually buy above.<br>New items are selected by default.</p>
       </div>
     </section>
@@ -497,7 +468,7 @@
       <div class="empty-state" id="shopping-empty" style="display:none;">
         <svg width="46" height="46" viewBox="0 0 24 24" fill="none"><path d="M6 4h12v16l-6-3-6 3V4Z" stroke="#C7BFAC" stroke-width="1.5" stroke-linejoin="round"/></svg>
         <h3>No shopping list yet</h3>
-        <p>Go to Pantry, select the items you need,<br>then tap Save to build your list.</p>
+        <p>Go to Grocery, select the items you need,<br>then tap Save to build your list.</p>
       </div>
     </section>
   </main>
@@ -514,7 +485,7 @@
         <span class="badge">
           <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M4 9h16l-1.6 9.4A2 2 0 0 1 16.44 20H7.56a2 2 0 0 1-1.96-1.6L4 9Z" stroke="currentColor" stroke-width="1.6"/><path d="M8 9V7a4 4 0 0 1 8 0v2" stroke="currentColor" stroke-width="1.6"/></svg>
         </span>
-        Pantry
+        Grocery
       </button>
       <button class="tab" data-tab="shopping">
         <span class="badge" id="shopping-badge-wrap">
@@ -537,7 +508,6 @@
   var shoppingList = [];
 
   var el = {
-    tagline: document.getElementById('tagline'),
     pantryList: document.getElementById('pantry-list'),
     pantryEmpty: document.getElementById('pantry-empty'),
     shoppingListEl: document.getElementById('shopping-list-el'),
@@ -594,6 +564,15 @@
     return d.innerHTML;
   }
 
+  function escAttr(s){
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
   // ---------- render: pantry ----------
   function renderPantry(){
     if(pantryItems.length === 0){
@@ -613,7 +592,7 @@
             '<div class="item-info">' +
               '<div class="item-name">' + esc(item.name) + '</div>' +
             '</div>' +
-            '<input type="number" class="qty-input-row" data-action="qty-edit" value="' + item.qty + '" min="1" inputmode="numeric" aria-label="Quantity">' +
+            '<input type="text" class="qty-input-row" data-action="qty-edit" value="' + escAttr(item.qty) + '" maxlength="16" aria-label="Quantity">' +
             '<button class="delete-btn" data-action="delete" aria-label="Delete item">' +
               '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>' +
             '</button>' +
@@ -650,10 +629,10 @@
 
     el.shoppingListEl.innerHTML = shoppingList.map(function(item){
       return (
-        '<div class="receipt-row item-row ' + (item.checked ? 'done' : '') + '" data-id="' + item.id + '">' +
-          '<div class="checkbox ' + (item.checked ? 'checked' : '') + '" data-action="toggle-check">' + CHECK_SVG + '</div>' +
+        '<div class="receipt-row item-row ' + (item.checked ? 'done' : '') + '" data-id="' + item.id + '" data-action="toggle-check">' +
           '<div class="item-info"><div class="item-name">' + esc(item.name) + '</div></div>' +
-          '<div class="qty-chip">Qty ' + item.qty + '</div>' +
+          '<div class="qty-chip">Qty ' + esc(item.qty) + '</div>' +
+          '<span class="done-mark">' + CHECK_SVG + '</span>' +
         '</div>'
       );
     }).join('');
@@ -688,8 +667,7 @@
     var id = row.getAttribute('data-id');
     var item = pantryItems.find(function(i){ return i.id === id; });
     if(!item) return;
-    var val = parseInt(input.value, 10);
-    item.qty = (!isNaN(val) && val >= 1) ? val : item.qty;
+    item.qty = input.value;
     setJSON('pantry-items', pantryItems);
   });
   el.pantryList.addEventListener('change', function(e){
@@ -699,7 +677,11 @@
     var id = row.getAttribute('data-id');
     var item = pantryItems.find(function(i){ return i.id === id; });
     if(!item) return;
-    input.value = item.qty; // normalize display (e.g. if left empty)
+    if(!input.value.trim()){
+      item.qty = '1';
+      input.value = '1';
+      setJSON('pantry-items', pantryItems);
+    }
   });
 
   el.selectToggleBtn.addEventListener('click', function(){
@@ -715,8 +697,8 @@
       el.newName.focus();
       return;
     }
-    var qtyVal = parseInt(el.newQty.value, 10);
-    if(isNaN(qtyVal) || qtyVal < 1) qtyVal = 1;
+    var qtyVal = el.newQty.value.trim();
+    if(!qtyVal) qtyVal = '1';
 
     pantryItems.unshift({
       id: uid(),
@@ -802,14 +784,10 @@
   Promise.all([getJSON('pantry-items'), getJSON('shopping-list')]).then(function(res){
     pantryItems = res[0] || [];
     shoppingList = res[1] || [];
-    el.tagline.textContent = pantryItems.length
-      ? 'Pick what you need, then save your list.'
-      : 'Build your pantry list to get started.';
     renderPantry();
     renderShopping();
     switchTab('pantry');
   }).catch(function(){
-    el.tagline.textContent = 'Build your pantry list to get started.';
     renderPantry();
     renderShopping();
     switchTab('pantry');
