@@ -8,9 +8,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#FAF7F0">
 <title>Grocery List</title>
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -53,32 +50,12 @@
   /* ---------- Content ---------- */
   main{
     flex:1;
-    padding:56px 16px 130px;
+    padding:22px 16px 130px;
   }
   .view{ display:none; animation:fade .25s ease; }
   .view.active{ display:block; }
   @keyframes fade{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
 
-  .refresh-btn{
-    position:fixed;
-    top:max(14px, env(safe-area-inset-top, 0px));
-    right:16px;
-    z-index:45;
-    width:36px;
-    height:36px;
-    border-radius:50%;
-    border:1px solid var(--line);
-    background:var(--white);
-    color:var(--ink-soft);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    box-shadow:var(--shadow);
-  }
-  .refresh-btn svg{ width:17px; height:17px; }
-  .refresh-btn:active{ transform:scale(0.92); color:var(--basil); }
-  .refresh-btn.spinning svg{ animation:spin .6s linear; }
   @keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
 
   .section-row{
@@ -371,9 +348,12 @@
     max-width:488px;
     width:100%;
     pointer-events:auto;
+    display:flex;
+    gap:10px;
   }
   .btn-save{
-    width:100%;
+    flex:1;
+    min-width:0;
     background:var(--basil);
     color:var(--white);
     border:none;
@@ -387,6 +367,27 @@
   }
   .btn-save:active{ background:var(--basil-dark); }
   .btn-save:disabled{ background:var(--ink-soft); box-shadow:none; opacity:0.5; }
+
+  .btn-refresh{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    gap:7px;
+    background:var(--white);
+    color:var(--ink);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:15px 16px;
+    font-family:'Public Sans', sans-serif;
+    font-weight:700;
+    font-size:14px;
+    box-shadow:var(--shadow);
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .btn-refresh svg{ width:16px; height:16px; flex:0 0 auto; }
+  .btn-refresh:active{ background:var(--paper-alt); }
+  .btn-refresh.spinning svg{ animation:spin .6s linear; }
 
   /* ---------- Tab bar ---------- */
   .tabbar{
@@ -471,10 +472,6 @@
 <body>
 <div id="app">
 
-  <button class="refresh-btn" id="refresh-btn" aria-label="Refresh">
-    <svg viewBox="0 0 24 24" fill="none"><path d="M20 11A8 8 0 1 0 19.5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M20 5v6h-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </button>
-
   <main>
     <!-- GROCERY VIEW -->
     <section id="pantry-view" class="view active">
@@ -532,6 +529,10 @@
   <div class="save-bar" id="save-bar">
     <div class="save-bar-inner">
       <button class="btn-save" id="save-btn">Save &amp; build shopping list</button>
+      <button class="btn-refresh" id="refresh-btn" aria-label="Refresh">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M20 11A8 8 0 1 0 19.5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M20 5v6h-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Refresh
+      </button>
     </div>
   </div>
 
@@ -877,13 +878,16 @@
     window.location.href = freshUrl;
   });
 
-  // ---------- service worker (enables install / offline use) ----------
+  // ---------- remove any old service worker + caches (was causing stale content) ----------
   if('serviceWorker' in navigator){
-    window.addEventListener('load', function(){
-      navigator.serviceWorker.register('sw.js').catch(function(err){
-        console.error('SW registration failed', err);
-      });
-    });
+    navigator.serviceWorker.getRegistrations().then(function(regs){
+      regs.forEach(function(reg){ reg.unregister(); });
+    }).catch(function(){});
+  }
+  if('caches' in window){
+    caches.keys().then(function(names){
+      names.forEach(function(name){ caches.delete(name); });
+    }).catch(function(){});
   }
 
   // ---------- init ----------
