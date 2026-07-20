@@ -207,12 +207,9 @@
 
   .qty-chip{
     font-family:'IBM Plex Mono', monospace;
-    font-size:12.5px;
+    font-size:13px;
     font-weight:600;
     color:var(--clay);
-    background:var(--clay-light);
-    border-radius:8px;
-    padding:4px 8px;
     flex:0 0 auto;
     white-space:nowrap;
   }
@@ -301,15 +298,16 @@
     background-repeat:repeat-x;
   }
   .receipt-inner{ padding:6px 14px 14px; }
-  .receipt-head{
+  .progress-row{
     display:flex;
     justify-content:space-between;
     align-items:center;
-    padding:10px 2px 12px;
-    border-bottom:1px dashed var(--line);
-    margin-bottom:6px;
+    padding:2px 6px 10px;
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--ink);
   }
-  .receipt-head .progress-text{
+  .progress-row .progress-text{
     font-family:'IBM Plex Mono', monospace;
     font-size:12.5px;
     color:var(--ink-soft);
@@ -500,13 +498,13 @@
       </div>
 
       <div id="shopping-wrap">
+        <div class="progress-row">
+          <span>Items Shopped</span>
+          <span class="progress-text" id="progress-text">0 / 0</span>
+        </div>
         <div class="receipt-card">
           <div class="torn-edge"></div>
           <div class="receipt-inner">
-            <div class="receipt-head">
-              <span>Ready to shop</span>
-              <span class="progress-text" id="progress-text">0 / 0</span>
-            </div>
             <div class="item-list" id="shopping-list-el"></div>
           </div>
         </div>
@@ -712,7 +710,7 @@
       return (
         '<div class="receipt-row item-row ' + (item.checked ? 'done' : '') + '" data-id="' + item.id + '" data-action="toggle-check">' +
           '<div class="item-info"><div class="item-name">' + esc(item.name) + '</div></div>' +
-          '<div class="qty-chip">Qty ' + esc(qtyDisplay) + '</div>' +
+          '<div class="qty-chip">' + esc(qtyDisplay) + '</div>' +
           '<span class="done-mark">' + CHECK_SVG + '</span>' +
           '<button class="delete-btn" data-action="delete-shopping" aria-label="Remove item">' +
             '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V4.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1V7M6 7l.8 12.4a2 2 0 0 0 2 1.6h6.4a2 2 0 0 0 2-1.6L18 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>' +
