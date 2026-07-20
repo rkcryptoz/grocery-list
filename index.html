@@ -53,11 +53,33 @@
   /* ---------- Content ---------- */
   main{
     flex:1;
-    padding:22px 16px 130px;
+    padding:56px 16px 130px;
   }
   .view{ display:none; animation:fade .25s ease; }
   .view.active{ display:block; }
   @keyframes fade{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+
+  .refresh-btn{
+    position:fixed;
+    top:max(14px, env(safe-area-inset-top, 0px));
+    right:16px;
+    z-index:45;
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:var(--white);
+    color:var(--ink-soft);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:var(--shadow);
+  }
+  .refresh-btn svg{ width:17px; height:17px; }
+  .refresh-btn:active{ transform:scale(0.92); color:var(--basil); }
+  .refresh-btn.spinning svg{ animation:spin .6s linear; }
+  @keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
 
   .section-row{
     display:flex;
@@ -160,18 +182,18 @@
     gap:10px;
     background:transparent;
     border-bottom:1px solid var(--paper-alt);
-    padding:12px 14px;
+    padding:7px 14px;
     transition:background .15s ease;
   }
   .item-row:last-child{ border-bottom:none; }
   .item-row.selected{ background:var(--basil-light); }
-  .item-row.locked{ background:var(--paper-alt); }
+  .item-row.locked{ background:var(--paper-alt); opacity:0.68; }
 
   .checkbox{
-    width:24px;
-    height:24px;
+    width:22px;
+    height:22px;
     flex:0 0 auto;
-    border-radius:50%;
+    border-radius:6px;
     border:2px solid var(--ink-soft);
     display:flex;
     align-items:center;
@@ -180,10 +202,10 @@
     background:var(--white);
     transition:transform .12s ease, background .15s ease, border-color .15s ease;
   }
-  .checkbox svg{ width:13px; height:13px; opacity:0; transform:scale(0.5); transition:opacity .12s ease, transform .12s ease; }
+  .checkbox svg{ width:12px; height:12px; opacity:0; transform:scale(0.5); transition:opacity .12s ease, transform .12s ease; }
   .checkbox.checked{ background:var(--basil); border-color:var(--basil); animation:pop .22s ease; }
   .checkbox.checked svg{ opacity:1; transform:scale(1); }
-  .checkbox.locked-check{ cursor:default; opacity:0.55; }
+  .checkbox.locked-check{ cursor:default; opacity:0.7; }
   @keyframes pop{ 0%{transform:scale(0.85);} 55%{transform:scale(1.15);} 100%{transform:scale(1);} }
 
   .item-info{ flex:1; min-width:0; }
@@ -230,15 +252,20 @@
   .qty-input-row:disabled{ color:var(--ink-soft); background:transparent; border-color:transparent; }
 
   .locked-badge{
-    font-size:11px;
+    display:flex;
+    align-items:center;
+    gap:4px;
+    font-size:11.5px;
     font-weight:700;
-    color:var(--ink-soft);
-    background:var(--line);
+    color:var(--basil-dark);
+    background:var(--basil-light);
+    border:1px solid var(--basil);
     border-radius:999px;
-    padding:4px 9px;
+    padding:4px 10px 4px 7px;
     flex:0 0 auto;
     white-space:nowrap;
   }
+  .locked-badge svg{ width:11px; height:11px; flex:0 0 auto; }
 
   .delete-btn{
     width:26px; height:26px;
@@ -444,6 +471,10 @@
 <body>
 <div id="app">
 
+  <button class="refresh-btn" id="refresh-btn" aria-label="Refresh">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M20 11A8 8 0 1 0 19.5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M20 5v6h-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+
   <main>
     <!-- GROCERY VIEW -->
     <section id="pantry-view" class="view active">
@@ -547,7 +578,8 @@
     selectToggleBtn: document.getElementById('select-toggle-btn'),
     clearListBtn: document.getElementById('clear-list-btn'),
     shoppingCount: document.getElementById('shopping-count'),
-    toast: document.getElementById('toast')
+    toast: document.getElementById('toast'),
+    refreshBtn: document.getElementById('refresh-btn')
   };
 
   var CHECK_SVG = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -630,7 +662,7 @@
                 '<div class="item-name">' + esc(item.name) + '</div>' +
               '</div>' +
               '<input type="text" class="qty-input-row" value="' + escAttr(item.qty) + '" placeholder="Quantity" maxlength="16" aria-label="Quantity" disabled>' +
-              '<span class="locked-badge">In list</span>' +
+              '<span class="locked-badge"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Added</span>' +
             '</div>'
           );
         }
@@ -836,6 +868,13 @@
   }
   document.querySelectorAll('.tab').forEach(function(t){
     t.addEventListener('click', function(){ switchTab(t.getAttribute('data-tab')); });
+  });
+
+  // ---------- refresh (forces a fresh fetch, bypassing any cached page) ----------
+  el.refreshBtn.addEventListener('click', function(){
+    el.refreshBtn.classList.add('spinning');
+    var freshUrl = window.location.pathname + '?_r=' + Date.now();
+    window.location.href = freshUrl;
   });
 
   // ---------- service worker (enables install / offline use) ----------
