@@ -146,18 +146,26 @@
   .btn-add:active{ background:var(--basil-dark); }
 
   /* ---------- List rows ---------- */
-  .item-list{ display:flex; flex-direction:column; gap:8px; }
+  .list-card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .item-list{ display:flex; flex-direction:column; }
   .item-row{
     display:flex;
     align-items:center;
-    gap:12px;
-    background:var(--white);
-    border:1px solid var(--line);
-    border-radius:14px;
-    padding:10px 12px;
-    transition:background .15s ease, border-color .15s ease;
+    gap:10px;
+    background:transparent;
+    border-bottom:1px solid var(--paper-alt);
+    padding:12px 14px;
+    transition:background .15s ease;
   }
-  .item-row.selected{ border-color:var(--basil); background:var(--basil-light); }
+  .item-row:last-child{ border-bottom:none; }
+  .item-row.selected{ background:var(--basil-light); }
+  .item-row.locked{ background:var(--paper-alt); }
 
   .checkbox{
     width:24px;
@@ -175,6 +183,7 @@
   .checkbox svg{ width:13px; height:13px; opacity:0; transform:scale(0.5); transition:opacity .12s ease, transform .12s ease; }
   .checkbox.checked{ background:var(--basil); border-color:var(--basil); animation:pop .22s ease; }
   .checkbox.checked svg{ opacity:1; transform:scale(1); }
+  .checkbox.locked-check{ cursor:default; opacity:0.55; }
   @keyframes pop{ 0%{transform:scale(0.85);} 55%{transform:scale(1.15);} 100%{transform:scale(1);} }
 
   .item-info{ flex:1; min-width:0; }
@@ -186,6 +195,7 @@
     overflow:hidden;
     text-overflow:ellipsis;
   }
+  .item-row.locked .item-name{ color:var(--ink-soft); }
   .item-row.done .item-name{ text-decoration:line-through; color:var(--ink-soft); }
 
   .qty-chip{
@@ -201,7 +211,7 @@
   }
 
   .qty-input-row{
-    width:92px;
+    width:88px;
     flex:0 0 auto;
     border:1px solid var(--line);
     background:var(--paper-alt);
@@ -215,7 +225,20 @@
     padding:0 4px;
     outline:none;
   }
+  .qty-input-row::placeholder{ color:var(--ink-soft); font-weight:500; }
   .qty-input-row:focus{ border-color:var(--basil); }
+  .qty-input-row:disabled{ color:var(--ink-soft); background:transparent; border-color:transparent; }
+
+  .locked-badge{
+    font-size:11px;
+    font-weight:700;
+    color:var(--ink-soft);
+    background:var(--line);
+    border-radius:999px;
+    padding:4px 9px;
+    flex:0 0 auto;
+    white-space:nowrap;
+  }
 
   .delete-btn{
     width:26px; height:26px;
@@ -427,7 +450,7 @@
       <div class="add-card">
         <div class="add-row">
           <input type="text" class="name-input" id="new-item-name" placeholder="Add an item, e.g. Tomatoes" maxlength="60">
-          <input type="text" class="qty-input" id="new-item-qty" value="1" maxlength="16" placeholder="Qty" aria-label="Quantity">
+          <input type="text" class="qty-input" id="new-item-qty" maxlength="16" placeholder="Quantity" aria-label="Quantity">
           <button class="btn-add" id="add-item-btn">Add</button>
         </div>
       </div>
@@ -437,7 +460,9 @@
         <button class="link-btn" id="select-toggle-btn">Select all</button>
       </div>
 
-      <div class="item-list" id="pantry-list"></div>
+      <div class="list-card" id="pantry-card">
+        <div class="item-list" id="pantry-list"></div>
+      </div>
       <div class="empty-state" id="pantry-empty" style="display:none;">
         <svg width="46" height="46" viewBox="0 0 24 24" fill="none"><path d="M4 9h16l-1.6 9.4A2 2 0 0 1 16.44 20H7.56a2 2 0 0 1-1.96-1.6L4 9Z" stroke="#C7BFAC" stroke-width="1.5"/><path d="M8 9V7a4 4 0 0 1 8 0v2" stroke="#C7BFAC" stroke-width="1.5"/></svg>
         <h3>Your grocery list is empty</h3>
@@ -508,6 +533,7 @@
   var shoppingList = [];
 
   var el = {
+    pantryCard: document.getElementById('pantry-card'),
     pantryList: document.getElementById('pantry-list'),
     pantryEmpty: document.getElementById('pantry-empty'),
     shoppingListEl: document.getElementById('shopping-list-el'),
@@ -577,22 +603,45 @@
   function renderPantry(){
     if(pantryItems.length === 0){
       el.pantryList.innerHTML = '';
+      el.pantryCard.style.display = 'none';
       el.pantryEmpty.style.display = 'block';
       el.selectToggleBtn.style.display = 'none';
     } else {
+      el.pantryCard.style.display = 'block';
       el.pantryEmpty.style.display = 'none';
       el.selectToggleBtn.style.display = 'inline-block';
-      var allSelected = pantryItems.every(function(i){ return i.selected; });
+
+      var lockedIds = {};
+      shoppingList.forEach(function(i){ lockedIds[i.id] = true; });
+
+      var unlockedItems = pantryItems.filter(function(i){ return !lockedIds[i.id]; });
+      var allSelected = unlockedItems.length > 0 && unlockedItems.every(function(i){ return i.selected; });
       el.selectToggleBtn.textContent = allSelected ? 'Clear all' : 'Select all';
+      el.selectToggleBtn.style.display = unlockedItems.length > 0 ? 'inline-block' : 'none';
 
       el.pantryList.innerHTML = pantryItems.map(function(item){
+        var locked = !!lockedIds[item.id];
+
+        if(locked){
+          return (
+            '<div class="item-row locked" data-id="' + item.id + '">' +
+              '<div class="checkbox checked locked-check">' + CHECK_SVG + '</div>' +
+              '<div class="item-info">' +
+                '<div class="item-name">' + esc(item.name) + '</div>' +
+              '</div>' +
+              '<input type="text" class="qty-input-row" value="' + escAttr(item.qty) + '" placeholder="Quantity" maxlength="16" aria-label="Quantity" disabled>' +
+              '<span class="locked-badge">In list</span>' +
+            '</div>'
+          );
+        }
+
         return (
           '<div class="item-row ' + (item.selected ? 'selected' : '') + '" data-id="' + item.id + '">' +
             '<div class="checkbox ' + (item.selected ? 'checked' : '') + '" data-action="toggle-select">' + CHECK_SVG + '</div>' +
             '<div class="item-info">' +
               '<div class="item-name">' + esc(item.name) + '</div>' +
             '</div>' +
-            '<input type="text" class="qty-input-row" data-action="qty-edit" value="' + escAttr(item.qty) + '" maxlength="16" aria-label="Quantity">' +
+            '<input type="text" class="qty-input-row" data-action="qty-edit" value="' + escAttr(item.qty) + '" placeholder="Quantity" maxlength="16" aria-label="Quantity">' +
             '<button class="delete-btn" data-action="delete" aria-label="Delete item">' +
               '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>' +
             '</button>' +
@@ -628,11 +677,15 @@
     el.progressText.textContent = done + ' / ' + count;
 
     el.shoppingListEl.innerHTML = shoppingList.map(function(item){
+      var hasQty = item.qty && String(item.qty).trim();
       return (
         '<div class="receipt-row item-row ' + (item.checked ? 'done' : '') + '" data-id="' + item.id + '" data-action="toggle-check">' +
           '<div class="item-info"><div class="item-name">' + esc(item.name) + '</div></div>' +
-          '<div class="qty-chip">Qty ' + esc(item.qty) + '</div>' +
+          (hasQty ? '<div class="qty-chip">Qty ' + esc(item.qty) + '</div>' : '') +
           '<span class="done-mark">' + CHECK_SVG + '</span>' +
+          '<button class="delete-btn" data-action="delete-shopping" aria-label="Remove item">' +
+            '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>' +
+          '</button>' +
         '</div>'
       );
     }).join('');
@@ -670,23 +723,13 @@
     item.qty = input.value;
     setJSON('pantry-items', pantryItems);
   });
-  el.pantryList.addEventListener('change', function(e){
-    var input = e.target.closest('[data-action="qty-edit"]');
-    if(!input) return;
-    var row = e.target.closest('.item-row');
-    var id = row.getAttribute('data-id');
-    var item = pantryItems.find(function(i){ return i.id === id; });
-    if(!item) return;
-    if(!input.value.trim()){
-      item.qty = '1';
-      input.value = '1';
-      setJSON('pantry-items', pantryItems);
-    }
-  });
 
   el.selectToggleBtn.addEventListener('click', function(){
-    var allSelected = pantryItems.every(function(i){ return i.selected; });
-    pantryItems.forEach(function(i){ i.selected = !allSelected; });
+    var lockedIds = {};
+    shoppingList.forEach(function(i){ lockedIds[i.id] = true; });
+    var unlockedItems = pantryItems.filter(function(i){ return !lockedIds[i.id]; });
+    var allSelected = unlockedItems.length > 0 && unlockedItems.every(function(i){ return i.selected; });
+    unlockedItems.forEach(function(i){ i.selected = !allSelected; });
     renderPantry();
     setJSON('pantry-items', pantryItems);
   });
@@ -698,7 +741,6 @@
       return;
     }
     var qtyVal = el.newQty.value.trim();
-    if(!qtyVal) qtyVal = '1';
 
     pantryItems.unshift({
       id: uid(),
@@ -707,7 +749,7 @@
       selected: true
     });
     el.newName.value = '';
-    el.newQty.value = '1';
+    el.newQty.value = '';
     renderPantry();
     setJSON('pantry-items', pantryItems);
     showToast('Added "' + name + '"');
@@ -738,23 +780,48 @@
   });
 
   // ---------- shopping actions ----------
+  function removeFromShoppingList(id){
+    shoppingList = shoppingList.filter(function(i){ return i.id !== id; });
+    var pantryItem = pantryItems.find(function(i){ return i.id === id; });
+    if(pantryItem) pantryItem.selected = false;
+    renderShopping();
+    renderPantry();
+    setJSON('shopping-list', shoppingList);
+    setJSON('pantry-items', pantryItems);
+    showToast('Removed from shopping list');
+  }
+
   el.shoppingListEl.addEventListener('click', function(e){
-    var actionEl = e.target.closest('[data-action="toggle-check"]');
+    var actionEl = e.target.closest('[data-action]');
     if(!actionEl) return;
+    var action = actionEl.getAttribute('data-action');
     var row = e.target.closest('.item-row');
     var id = row.getAttribute('data-id');
-    var item = shoppingList.find(function(i){ return i.id === id; });
-    if(!item) return;
-    item.checked = !item.checked;
-    renderShopping();
-    setJSON('shopping-list', shoppingList);
+
+    if(action === 'delete-shopping'){
+      removeFromShoppingList(id);
+      return;
+    }
+    if(action === 'toggle-check'){
+      var item = shoppingList.find(function(i){ return i.id === id; });
+      if(!item) return;
+      item.checked = !item.checked;
+      renderShopping();
+      setJSON('shopping-list', shoppingList);
+    }
   });
 
   el.clearListBtn.addEventListener('click', function(){
     if(shoppingList.length === 0) return;
+    shoppingList.forEach(function(sItem){
+      var pantryItem = pantryItems.find(function(i){ return i.id === sItem.id; });
+      if(pantryItem) pantryItem.selected = false;
+    });
     shoppingList = [];
     renderShopping();
+    renderPantry();
     setJSON('shopping-list', shoppingList);
+    setJSON('pantry-items', pantryItems);
     showToast('Shopping list cleared');
   });
 
