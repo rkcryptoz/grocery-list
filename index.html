@@ -808,6 +808,7 @@
     });
     setJSON('shopping-list', shoppingList);
     renderShopping();
+    renderPantry();
     switchTab('shopping');
     showToast('Saved ' + selected.length + ' item' + (selected.length > 1 ? 's' : '') + ' to your shopping list');
   });
@@ -874,8 +875,7 @@
   // ---------- refresh (forces a fresh fetch, bypassing any cached page) ----------
   el.refreshBtn.addEventListener('click', function(){
     el.refreshBtn.classList.add('spinning');
-    var freshUrl = window.location.pathname + '?_r=' + Date.now();
-    window.location.href = freshUrl;
+    window.location.reload();
   });
 
   // ---------- remove any old service worker + caches (was causing stale content) ----------
