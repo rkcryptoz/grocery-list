@@ -988,6 +988,16 @@
     });
     var text = 'Shopping List\n' + lines.join('\n');
 
+    // Running inside the MIT App Inventor WebViewer: hand the text off to
+    // native Blocks (via WebViewString) so a real Sharing component can
+    // open Android's native share sheet. This is more reliable than the
+    // browser share/clipboard APIs, which the WebViewer doesn't fully support.
+    if(window.AppInventor && typeof window.AppInventor.setWebViewString === 'function'){
+      window.AppInventor.setWebViewString(text);
+      return;
+    }
+
+    // Fallback for testing in a regular browser (not inside the app).
     if(navigator.share){
       navigator.share({ title: 'Shopping List', text: text }).catch(function(err){
         if(err && err.name !== 'AbortError') copyToClipboard(text);
@@ -1000,7 +1010,8 @@
   function copyToClipboard(text){
     if(navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(text).then(function(){
-        showToast('List copied to clipboard');
+        // Modern Android/Chrome already shows its own "Copied to clipboard"
+        // system toast here, so we don't add a second one on top of it.
       }).catch(function(){
         showToast('Could not copy list');
       });
@@ -1011,6 +1022,7 @@
       ta.style.opacity = '0';
       document.body.appendChild(ta);
       ta.select();
+      // No OS-level indicator on this legacy fallback, so show our own.
       try{ document.execCommand('copy'); showToast('List copied to clipboard'); }
       catch(e){ showToast('Could not copy list'); }
       document.body.removeChild(ta);
