@@ -80,6 +80,94 @@
   }
   .link-btn:active{ opacity:0.6; }
 
+  /* ---------- Search box ---------- */
+  .search-row{
+    gap:8px;
+    flex-wrap:nowrap;
+    justify-content:flex-start;
+  }
+  .search-row h2{
+    flex-shrink:0;
+    white-space:nowrap;
+    margin-right:auto;
+  }
+  .search-wrap{
+    position:relative;
+    flex:1;
+    min-width:0;
+    max-width:150px;
+  }
+  .search-row .link-btn{
+    flex-shrink:0;
+    padding:6px 2px;
+    white-space:nowrap;
+  }
+  .search-wrap svg{
+    position:absolute;
+    left:10px;
+    top:50%;
+    transform:translateY(-50%);
+    pointer-events:none;
+    opacity:0.55;
+  }
+  .search-input{
+    width:100%;
+    height:32px;
+    border:1px solid var(--line);
+    background:var(--white);
+    box-shadow:var(--shadow);
+    border-radius:10px;
+    font-family:'Public Sans', sans-serif;
+    font-size:13px;
+    font-weight:500;
+    color:var(--ink);
+    padding:0 28px 0 30px;
+    outline:none;
+    box-sizing:border-box;
+  }
+  .search-input::placeholder{ color:var(--ink-soft); font-weight:500; }
+  .search-input:focus{ border-color:var(--basil); }
+  .search-clear{
+    position:absolute;
+    right:3px;
+    top:50%;
+    transform:translateY(-50%);
+    width:24px; height:24px;
+    border:none;
+    background:none;
+    color:var(--ink-soft);
+    cursor:pointer;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    border-radius:6px;
+  }
+  .search-clear.show{ display:flex; }
+  .search-clear:active{ background:var(--paper-alt); }
+  .no-results{
+    text-align:center;
+    padding:30px 20px;
+    color:var(--ink-soft);
+    font-size:13.5px;
+  }
+
+  /* ---------- Share button ---------- */
+  .share-btn{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    background:var(--basil-light);
+    border:1px solid var(--basil);
+    color:var(--basil-dark);
+    font-family:'Public Sans', sans-serif;
+    font-weight:600;
+    font-size:12.5px;
+    cursor:pointer;
+    padding:6px 12px;
+    border-radius:20px;
+  }
+  .share-btn:active{ background:var(--basil); color:var(--white); }
+
   /* ---------- Add item card ---------- */
   .add-card{
     background:var(--white);
@@ -163,7 +251,10 @@
     transition:background .15s ease;
   }
   .item-row:last-child{ border-bottom:none; }
+  .item-row[data-action="toggle-select"]{ cursor:pointer; }
+  .item-row[data-action="toggle-select"]:active{ background:var(--paper-alt); }
   .item-row.selected{ background:var(--basil-light); }
+  .item-row.selected:active{ background:var(--basil-light); }
   .item-row.locked{ background:var(--paper-alt); opacity:0.68; }
   .item-row.done{ background:var(--paper-alt); }
 
@@ -301,6 +392,11 @@
     background-repeat:repeat-x;
   }
   .receipt-inner{ padding:6px 14px 14px; }
+  .receipt-inner .item-list{
+    max-height:calc(100vh - 380px);
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
   .progress-row{
     display:flex;
     justify-content:space-between;
@@ -465,8 +561,15 @@
         </div>
       </div>
 
-      <div class="section-row">
+      <div class="section-row search-row">
         <h2>All Items</h2>
+        <div class="search-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input type="text" class="search-input" id="pantry-search" placeholder="Search items" aria-label="Search items">
+          <button class="search-clear" id="search-clear-btn" aria-label="Clear search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
         <button class="link-btn" id="select-toggle-btn">Select all</button>
       </div>
 
@@ -484,7 +587,13 @@
     <section id="shopping-view" class="view">
       <div class="section-row">
         <h2>Shopping list</h2>
-        <button class="link-btn" id="clear-list-btn">Clear list</button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="share-btn" id="share-list-btn" aria-label="Share list">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 8a3 3 0 1 0-2.83-4H15a3 3 0 0 0 .05.55L8.91 7.9a3 3 0 1 0 0 4.2l6.14 3.35A3 3 0 1 0 15 17a3 3 0 0 0 .05-.55l-6.14-3.35a3 3 0 0 0 0-2.2l6.14-3.35c.42.28.92.45 1.45.45.14 0 .27-.01.4-.03A3 3 0 0 0 18 8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            Share
+          </button>
+          <button class="link-btn" id="clear-list-btn">Clear list</button>
+        </div>
       </div>
 
       <div id="shopping-wrap">
@@ -541,6 +650,7 @@
 
   var pantryItems = [];
   var shoppingList = [];
+  var searchQuery = '';
 
   var el = {
     pantryCard: document.getElementById('pantry-card'),
@@ -556,6 +666,9 @@
     saveBtn: document.getElementById('save-btn'),
     selectToggleBtn: document.getElementById('select-toggle-btn'),
     clearListBtn: document.getElementById('clear-list-btn'),
+    shareListBtn: document.getElementById('share-list-btn'),
+    pantrySearch: document.getElementById('pantry-search'),
+    searchClearBtn: document.getElementById('search-clear-btn'),
     shoppingCount: document.getElementById('shopping-count'),
     toast: document.getElementById('toast')
   };
@@ -636,7 +749,20 @@
         return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
       });
 
-      el.pantryList.innerHTML = sortedItems.map(function(item){
+      var q = searchQuery.trim().toLowerCase();
+      var visibleItems = q ? sortedItems.filter(function(i){ return i.name.toLowerCase().indexOf(q) !== -1; }) : sortedItems;
+
+      if(visibleItems.length === 0){
+        el.pantryList.innerHTML = '<div class="no-results">No items match "' + esc(searchQuery.trim()) + '"</div>';
+        var selectedCount = pantryItems.filter(function(i){ return i.selected; }).length;
+        el.saveBtn.disabled = selectedCount === 0;
+        el.saveBtn.textContent = selectedCount > 0
+          ? 'Save to Shopping List (' + selectedCount + ')'
+          : 'Select items to save';
+        return;
+      }
+
+      el.pantryList.innerHTML = visibleItems.map(function(item){
         var locked = !!lockedIds[item.id];
 
         if(locked){
@@ -656,8 +782,8 @@
         }
 
         return (
-          '<div class="item-row ' + (item.selected ? 'selected' : '') + '" data-id="' + item.id + '">' +
-            '<div class="checkbox ' + (item.selected ? 'checked' : '') + '" data-action="toggle-select">' + CHECK_SVG + '</div>' +
+          '<div class="item-row ' + (item.selected ? 'selected' : '') + '" data-id="' + item.id + '" data-action="toggle-select">' +
+            '<div class="checkbox ' + (item.selected ? 'checked' : '') + '">' + CHECK_SVG + '</div>' +
             '<div class="item-info">' +
               '<div class="item-name">' + esc(item.name) + '</div>' +
             '</div>' +
@@ -745,6 +871,20 @@
     if(!item) return;
     item.qty = input.value;
     setJSON('pantry-items', pantryItems);
+  });
+
+  // ---------- search ----------
+  el.pantrySearch.addEventListener('input', function(){
+    searchQuery = el.pantrySearch.value;
+    el.searchClearBtn.classList.toggle('show', searchQuery.length > 0);
+    renderPantry();
+  });
+  el.searchClearBtn.addEventListener('click', function(){
+    searchQuery = '';
+    el.pantrySearch.value = '';
+    el.searchClearBtn.classList.remove('show');
+    renderPantry();
+    el.pantrySearch.focus();
   });
 
   el.selectToggleBtn.addEventListener('click', function(){
@@ -836,6 +976,46 @@
       setJSON('shopping-list', shoppingList);
     }
   });
+
+  el.shareListBtn.addEventListener('click', function(){
+    if(shoppingList.length === 0){
+      showToast('Your shopping list is empty');
+      return;
+    }
+    var lines = shoppingList.map(function(i){
+      var qty = i.qty && String(i.qty).trim() ? i.qty : '';
+      return '- ' + i.name + (qty ? ' (' + qty + ')' : '');
+    });
+    var text = 'Shopping List\n' + lines.join('\n');
+
+    if(navigator.share){
+      navigator.share({ title: 'Shopping List', text: text }).catch(function(err){
+        if(err && err.name !== 'AbortError') copyToClipboard(text);
+      });
+    } else {
+      copyToClipboard(text);
+    }
+  });
+
+  function copyToClipboard(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){
+        showToast('List copied to clipboard');
+      }).catch(function(){
+        showToast('Could not copy list');
+      });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try{ document.execCommand('copy'); showToast('List copied to clipboard'); }
+      catch(e){ showToast('Could not copy list'); }
+      document.body.removeChild(ta);
+    }
+  }
 
   el.clearListBtn.addEventListener('click', function(){
     if(shoppingList.length === 0) return;
