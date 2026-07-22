@@ -992,9 +992,7 @@
 
   function copyToClipboard(text){
     if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text).then(function(){
-        showToast('List copied to clipboard');
-      }).catch(function(){
+      navigator.clipboard.writeText(text).catch(function(){
         showToast('Could not copy list');
       });
     } else {
@@ -1004,7 +1002,7 @@
       ta.style.opacity = '0';
       document.body.appendChild(ta);
       ta.select();
-      try{ document.execCommand('copy'); showToast('List copied to clipboard'); }
+      try{ document.execCommand('copy'); }
       catch(e){ showToast('Could not copy list'); }
       document.body.removeChild(ta);
     }
