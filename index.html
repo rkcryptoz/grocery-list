@@ -236,10 +236,15 @@
     border:1px solid var(--line);
     border-radius:16px;
     box-shadow:var(--shadow);
+    position:relative;
+  }
+  .list-card .item-list{
+    max-height:calc(100vh - 300px);
     overflow-y:auto;
     -webkit-overflow-scrolling:touch;
-    max-height:calc(100vh - 300px);
+    scrollbar-width:none;
   }
+  .list-card .item-list::-webkit-scrollbar{ display:none; width:0; height:0; }
   .item-list{ display:flex; flex-direction:column; }
   .item-row{
     display:flex;
@@ -391,11 +396,23 @@
     background-position:0 0, 6px 0;
     background-repeat:repeat-x;
   }
-  .receipt-inner{ padding:6px 14px 14px; }
+  .receipt-inner{ padding:6px 14px 14px; position:relative; }
   .receipt-inner .item-list{
     max-height:calc(100vh - 380px);
     overflow-y:auto;
     -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .receipt-inner .item-list::-webkit-scrollbar{ display:none; width:0; height:0; }
+  .scroll-thumb{
+    position:absolute;
+    top:0;
+    right:3px;
+    width:4px;
+    border-radius:2px;
+    background:var(--line);
+    pointer-events:none;
+    display:none;
   }
   .progress-row{
     display:flex;
@@ -575,6 +592,7 @@
 
       <div class="list-card" id="pantry-card">
         <div class="item-list" id="pantry-list"></div>
+        <div class="scroll-thumb" id="pantry-scroll-thumb"></div>
       </div>
       <div class="empty-state" id="pantry-empty" style="display:none;">
         <svg width="46" height="46" viewBox="0 0 24 24" fill="none"><path d="M4 9h16l-1.6 9.4A2 2 0 0 1 16.44 20H7.56a2 2 0 0 1-1.96-1.6L4 9Z" stroke="#C7BFAC" stroke-width="1.5"/><path d="M8 9V7a4 4 0 0 1 8 0v2" stroke="#C7BFAC" stroke-width="1.5"/></svg>
@@ -605,6 +623,7 @@
           <div class="torn-edge"></div>
           <div class="receipt-inner">
             <div class="item-list" id="shopping-list-el"></div>
+            <div class="scroll-thumb" id="shopping-scroll-thumb"></div>
           </div>
         </div>
       </div>
@@ -667,6 +686,8 @@
     selectToggleBtn: document.getElementById('select-toggle-btn'),
     clearListBtn: document.getElementById('clear-list-btn'),
     copyListBtn: document.getElementById('copy-list-btn'),
+    pantryScrollThumb: document.getElementById('pantry-scroll-thumb'),
+    shoppingScrollThumb: document.getElementById('shopping-scroll-thumb'),
     pantrySearch: document.getElementById('pantry-search'),
     searchClearBtn: document.getElementById('search-clear-btn'),
     shoppingCount: document.getElementById('shopping-count'),
@@ -712,6 +733,45 @@
     d.textContent = s;
     return d.innerHTML;
   }
+
+  // ---------- always-visible custom scrollbar thumb ----------
+  // Native/overlay scrollbars (esp. on Android WebView) only appear while
+  // actively scrolling. These thumbs are plain positioned divs we control
+  // ourselves, so they stay visible any time the list content overflows.
+  function updateScrollThumb(scrollEl, thumbEl){
+    if(!scrollEl || !thumbEl) return;
+    var trackHeight = scrollEl.clientHeight;
+    var contentHeight = scrollEl.scrollHeight;
+    if(contentHeight <= trackHeight + 1){
+      thumbEl.style.display = 'none';
+      return;
+    }
+    var thumbHeight = Math.max(24, trackHeight * (trackHeight / contentHeight));
+    var maxThumbTop = trackHeight - thumbHeight;
+    var maxScroll = contentHeight - trackHeight;
+    var scrollRatio = maxScroll > 0 ? scrollEl.scrollTop / maxScroll : 0;
+    // offsetTop accounts for any padding between the positioned ancestor
+    // (thumb's containing block) and the scrollable element itself.
+    var baseOffset = scrollEl.offsetTop;
+    thumbEl.style.display = 'block';
+    thumbEl.style.height = thumbHeight + 'px';
+    thumbEl.style.top = (baseOffset + scrollRatio * maxThumbTop) + 'px';
+  }
+
+  function refreshScrollThumbs(){
+    requestAnimationFrame(function(){
+      updateScrollThumb(el.pantryList, el.pantryScrollThumb);
+      updateScrollThumb(el.shoppingListEl, el.shoppingScrollThumb);
+    });
+  }
+
+  el.pantryList.addEventListener('scroll', function(){
+    updateScrollThumb(el.pantryList, el.pantryScrollThumb);
+  });
+  el.shoppingListEl.addEventListener('scroll', function(){
+    updateScrollThumb(el.shoppingListEl, el.shoppingScrollThumb);
+  });
+  window.addEventListener('resize', refreshScrollThumbs);
 
   function escAttr(s){
     return String(s)
@@ -759,6 +819,7 @@
         el.saveBtn.textContent = selectedCount > 0
           ? 'Save to Shopping List (' + selectedCount + ')'
           : 'Select items to save';
+        refreshScrollThumbs();
         return;
       }
 
@@ -801,6 +862,7 @@
     el.saveBtn.textContent = selectedCount > 0
       ? 'Save to Shopping List (' + selectedCount + ')'
       : 'Select items to save';
+    refreshScrollThumbs();
   }
 
   // ---------- render: shopping ----------
@@ -838,6 +900,7 @@
         '</div>'
       );
     }).join('');
+    refreshScrollThumbs();
   }
 
   // ---------- pantry actions ----------
